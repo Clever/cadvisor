@@ -68,6 +68,8 @@ type dockerContainerHandler struct {
 
 	// Time at which this container was created.
 	creationTime time.Time
+
+	marathonApp string
 }
 
 func newDockerContainerHandler(
@@ -115,15 +117,19 @@ func newDockerContainerHandler(
 	// Add the name and bare ID as aliases of the container.
 	handler.aliases = append(handler.aliases, strings.TrimPrefix(ctnr.Name, "/"))
 	handler.aliases = append(handler.aliases, id)
+	handler.aliases = append(handler.aliases, ctnr.Config.Hostname)
+
+	handler.marathonApp = getMarathonAppName(ctnr)
 
 	return handler, nil
 }
 
 func (self *dockerContainerHandler) ContainerReference() (info.ContainerReference, error) {
 	return info.ContainerReference{
-		Name:      self.name,
-		Aliases:   self.aliases,
-		Namespace: DockerNamespace,
+		Name:        self.name,
+		Aliases:     self.aliases,
+		Namespace:   DockerNamespace,
+		MarathonApp: self.marathonApp,
 	}, nil
 }
 
@@ -291,14 +297,19 @@ func (self *dockerContainerHandler) ListContainers(listType container.ListType) 
 
 	ret := make([]info.ContainerReference, 0, len(containers)+1)
 	for _, c := range containers {
+		ctnr, err := self.client.InspectContainer(c.ID)
+		if err != nil {
+			continue
+		}
 		if !strings.HasPrefix(c.Status, "Up ") {
 			continue
 		}
 
 		ref := info.ContainerReference{
-			Name:      FullContainerName(c.ID),
-			Aliases:   append(c.Names, c.ID),
-			Namespace: DockerNamespace,
+			Name:        FullContainerName(c.ID),
+			Aliases:     append(c.Names, c.ID),
+			Namespace:   DockerNamespace,
+			MarathonApp: getMarathonAppName(ctnr),
 		}
 		ret = append(ret, ref)
 	}
@@ -335,4 +346,18 @@ func (self *dockerContainerHandler) StopWatchingSubcontainers() error {
 
 func (self *dockerContainerHandler) Exists() bool {
 	return containerLibcontainer.Exists(*dockerRootDir, *dockerRunDir, self.id)
+}
+
+func getMarathonAppName(ctnr *docker.Container) string {
+	envs := ctnr.Config.Env
+	for _, env := range envs {
+		parts := strings.SplitN(env, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		if parts[0] == "MARATHON_APP_ID" {
+			return parts[1]
+		}
+	}
+	return ""
 }
