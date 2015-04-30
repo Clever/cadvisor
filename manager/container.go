@@ -24,12 +24,12 @@ import (
 
 	"github.com/docker/docker/pkg/units"
 	"github.com/golang/glog"
-	"github.com/google/cadvisor/container"
-	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/info/v2"
-	"github.com/google/cadvisor/storage/memory"
-	"github.com/google/cadvisor/summary"
-	"github.com/google/cadvisor/utils/cpuload"
+	"github.com/Clever/cadvisor/container"
+	info "github.com/Clever/cadvisor/info/v1"
+	"github.com/Clever/cadvisor/info/v2"
+	"github.com/Clever/cadvisor/storage/memory"
+	"github.com/Clever/cadvisor/summary"
+	"github.com/Clever/cadvisor/utils/cpuload"
 )
 
 // Housekeeping interval.

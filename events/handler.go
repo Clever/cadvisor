@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/utils"
+	info "github.com/Clever/cadvisor/info/v1"
+	"github.com/Clever/cadvisor/utils"
 )
 
 type byTimestamp []*info.Event

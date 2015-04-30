@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/SeanDolphin/bqschema"
-	"github.com/google/cadvisor/storage/bigquery/client"
+	"github.com/Clever/cadvisor/storage/bigquery/client"
 )
 
 type container struct {

@@ -18,7 +18,7 @@ import (
 	"flag"
 
 	"github.com/golang/glog"
-	"github.com/google/cadvisor/utils/oomparser"
+	"github.com/Clever/cadvisor/utils/oomparser"
 )
 
 // demonstrates how to run oomparser.OomParser to get OomInstance information

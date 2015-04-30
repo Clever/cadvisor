@@ -26,17 +26,17 @@ import (
 
 	"github.com/docker/libcontainer/cgroups"
 	"github.com/golang/glog"
-	"github.com/google/cadvisor/container"
-	"github.com/google/cadvisor/container/docker"
-	"github.com/google/cadvisor/container/raw"
-	"github.com/google/cadvisor/events"
-	"github.com/google/cadvisor/fs"
-	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/info/v2"
-	"github.com/google/cadvisor/storage/memory"
-	"github.com/google/cadvisor/utils/cpuload"
-	"github.com/google/cadvisor/utils/oomparser"
-	"github.com/google/cadvisor/utils/sysfs"
+	"github.com/Clever/cadvisor/container"
+	"github.com/Clever/cadvisor/container/docker"
+	"github.com/Clever/cadvisor/container/raw"
+	"github.com/Clever/cadvisor/events"
+	"github.com/Clever/cadvisor/fs"
+	info "github.com/Clever/cadvisor/info/v1"
+	"github.com/Clever/cadvisor/info/v2"
+	"github.com/Clever/cadvisor/storage/memory"
+	"github.com/Clever/cadvisor/utils/cpuload"
+	"github.com/Clever/cadvisor/utils/oomparser"
+	"github.com/Clever/cadvisor/utils/sysfs"
 )
 
 var globalHousekeepingInterval = flag.Duration("global_housekeeping_interval", 1*time.Minute, "Interval between global housekeepings")

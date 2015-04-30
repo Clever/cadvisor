@@ -18,10 +18,10 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
-	"github.com/google/cadvisor/container"
-	"github.com/google/cadvisor/container/libcontainer"
-	"github.com/google/cadvisor/fs"
-	info "github.com/google/cadvisor/info/v1"
+	"github.com/Clever/cadvisor/container"
+	"github.com/Clever/cadvisor/container/libcontainer"
+	"github.com/Clever/cadvisor/fs"
+	info "github.com/Clever/cadvisor/info/v1"
 )
 
 type rawFactory struct {
