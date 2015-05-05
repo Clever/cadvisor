@@ -390,5 +390,8 @@ func getMarathonAppName(ctnr *docker.Container) string {
 }
 
 func sanitizeMarathonAppID(appID string) string {
+	if strings.HasPrefix(appID, "/") {
+		appID = appID[1:]
+	}
 	return strings.Replace(appID, "/", "-", -1)
 }
