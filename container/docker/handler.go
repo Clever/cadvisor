@@ -383,8 +383,12 @@ func getMarathonAppName(ctnr *docker.Container) string {
 			continue
 		}
 		if parts[0] == "MARATHON_APP_ID" {
-			return parts[1]
+			return sanitizeMarathonAppID(parts[1])
 		}
 	}
 	return ""
+}
+
+func sanitizeMarathonAppID(appID string) string {
+	return strings.Replace(appID, "/", "-", -1)
 }
