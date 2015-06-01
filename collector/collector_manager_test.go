@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/cadvisor/info/v2"
+	"github.com/Clever/cadvisor/info/v2"
 	"github.com/stretchr/testify/assert"
 )
 

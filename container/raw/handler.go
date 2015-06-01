@@ -24,7 +24,7 @@ import (
 	"strings"
 	"time"
 
-	"code.google.com/p/go.exp/inotify"
+	"golang.org/x/exp/inotify"
 
 	"github.com/Clever/cadvisor/container"
 	"github.com/Clever/cadvisor/container/libcontainer"

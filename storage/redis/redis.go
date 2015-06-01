@@ -16,11 +16,12 @@ package redis
 
 import (
 	"encoding/json"
-	redis "github.com/garyburd/redigo/redis"
-	info "github.com/google/cadvisor/info/v1"
-	storage "github.com/google/cadvisor/storage"
 	"sync"
 	"time"
+
+	info "github.com/Clever/cadvisor/info/v1"
+	storage "github.com/Clever/cadvisor/storage"
+	redis "github.com/garyburd/redigo/redis"
 )
 
 type redisStorage struct {

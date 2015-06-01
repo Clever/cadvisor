@@ -15,8 +15,9 @@
 package collector
 
 import (
-	"github.com/google/cadvisor/info/v2"
 	"time"
+
+	"github.com/Clever/cadvisor/info/v2"
 )
 
 // TODO(vmarmol): Export to a custom metrics type when that is available.

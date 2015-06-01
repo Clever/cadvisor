@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/cadvisor/info/v2"
+	"github.com/Clever/cadvisor/info/v2"
 )
 
 type collectorManager struct {
