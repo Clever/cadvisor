@@ -38,6 +38,7 @@ const (
 	colTimestamp          string = "time"
 	colMachineName        string = "machine"
 	colContainerName      string = "container_name"
+	colMarathonApp        string = "marathon_app"
 	colCpuCumulativeUsage string = "cpu_cumulative_usage"
 	// Memory Usage
 	colMemoryUsage string = "memory_usage"
@@ -79,6 +80,9 @@ func (self *influxdbStorage) getSeriesDefaultValues(
 	} else {
 		*values = append(*values, ref.Name)
 	}
+
+	*columns = append(*columns, colMarathonApp)
+	*values = append(*values, ref.MarathonApp)
 }
 
 // In order to maintain a fixed column format, we add a new series for each filesystem partition.

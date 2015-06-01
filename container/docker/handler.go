@@ -22,15 +22,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/libcontainer/cgroups"
-	cgroup_fs "github.com/docker/libcontainer/cgroups/fs"
-	libcontainerConfigs "github.com/docker/libcontainer/configs"
-	"github.com/fsouza/go-dockerclient"
 	"github.com/Clever/cadvisor/container"
 	containerLibcontainer "github.com/Clever/cadvisor/container/libcontainer"
 	"github.com/Clever/cadvisor/fs"
 	info "github.com/Clever/cadvisor/info/v1"
 	"github.com/Clever/cadvisor/utils"
+	"github.com/docker/libcontainer/cgroups"
+	cgroup_fs "github.com/docker/libcontainer/cgroups/fs"
+	libcontainerConfigs "github.com/docker/libcontainer/configs"
+	"github.com/fsouza/go-dockerclient"
 )
 
 // Path to aufs dir where all the files exist.
@@ -70,7 +70,8 @@ type dockerContainerHandler struct {
 	creationTime time.Time
 
 	// Metadata labels associated with the container.
-	labels map[string]string
+	labels      map[string]string
+	marathonApp string
 }
 
 func newDockerContainerHandler(
@@ -119,15 +120,19 @@ func newDockerContainerHandler(
 	handler.aliases = append(handler.aliases, strings.TrimPrefix(ctnr.Name, "/"))
 	handler.aliases = append(handler.aliases, id)
 	handler.labels = ctnr.Config.Labels
+	handler.aliases = append(handler.aliases, ctnr.Config.Hostname)
+
+	handler.marathonApp = getMarathonAppName(ctnr)
 
 	return handler, nil
 }
 
 func (self *dockerContainerHandler) ContainerReference() (info.ContainerReference, error) {
 	return info.ContainerReference{
-		Name:      self.name,
-		Aliases:   self.aliases,
-		Namespace: DockerNamespace,
+		Name:        self.name,
+		Aliases:     self.aliases,
+		Namespace:   DockerNamespace,
+		MarathonApp: self.marathonApp,
 	}, nil
 }
 
@@ -296,14 +301,19 @@ func (self *dockerContainerHandler) ListContainers(listType container.ListType) 
 
 	ret := make([]info.ContainerReference, 0, len(containers)+1)
 	for _, c := range containers {
+		ctnr, err := self.client.InspectContainer(c.ID)
+		if err != nil {
+			continue
+		}
 		if !strings.HasPrefix(c.Status, "Up ") {
 			continue
 		}
 
 		ref := info.ContainerReference{
-			Name:      FullContainerName(c.ID),
-			Aliases:   append(c.Names, c.ID),
-			Namespace: DockerNamespace,
+			Name:        FullContainerName(c.ID),
+			Aliases:     append(c.Names, c.ID),
+			Namespace:   DockerNamespace,
+			MarathonApp: getMarathonAppName(ctnr),
 		}
 		ret = append(ret, ref)
 	}
@@ -363,4 +373,18 @@ func DockerImages() ([]docker.APIImages, error) {
 		return nil, err
 	}
 	return images, nil
+}
+
+func getMarathonAppName(ctnr *docker.Container) string {
+	envs := ctnr.Config.Env
+	for _, env := range envs {
+		parts := strings.SplitN(env, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		if parts[0] == "MARATHON_APP_ID" {
+			return parts[1]
+		}
+	}
+	return ""
 }
