@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.14.0 (2015-05-21)
+- Add process stats to container pages in the UI.
+- Serve UI from relative paths (allows reverse proxying).
+- Minor fixes to events API.
+- Add bytes available to FS info.
+- Adding Docker status and image information to UI.
+- Basic Redis storage backend.
+- Misc reliability improvements.
+
+## 0.13.0 (2015-05-01)
+- Added `--docker_only` to limit monitoring to only Docker containers.
+- Added support for Docker labels.
+- Added limit for events storage.
+- Fixes for OOM event monitoring.
+- Changed event type to a string in the API.
+- Misc fixes.
+
 ## 0.12.0 (2015-04-15)
 - Added support for Docker 1.6.
 - Split OOM event into OOM kill and OOM.

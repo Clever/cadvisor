@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/google/cadvisor/utils"
+	"github.com/Clever/cadvisor/utils"
 )
 
 var containerRegexp *regexp.Regexp = regexp.MustCompile(
@@ -180,7 +180,7 @@ func trySystemd() (*OomParser, error) {
 	if err != nil {
 		return nil, err
 	}
-	glog.V(1).Infof("oomparser using systemd")
+	glog.Infof("oomparser using systemd")
 	return &OomParser{
 		ioreader: bufio.NewReader(readcloser),
 	}, nil

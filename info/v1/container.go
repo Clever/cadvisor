@@ -43,6 +43,9 @@ type ContainerSpec struct {
 	// Time at which the container was created.
 	CreationTime time.Time `json:"creation_time,omitempty"`
 
+	// Metadata labels associated with this container.
+	Labels map[string]string `json:"labels,omitempty"`
+
 	HasCpu bool    `json:"has_cpu"`
 	Cpu    CpuSpec `json:"cpu,omitempty"`
 
@@ -69,6 +72,9 @@ type ContainerReference struct {
 	// Namespace under which the aliases of a container are unique.
 	// An example of a namespace is "docker" for Docker containers.
 	Namespace string `json:"namespace,omitempty"`
+
+	// Marathon App Name
+	MarathonApp string `json:"marathonapp,omitempty"`
 }
 
 // Sorts by container name.
@@ -338,6 +344,9 @@ type FsStats struct {
 	// Number of bytes that is consumed by the container on this filesystem.
 	Usage uint64 `json:"usage"`
 
+	// Number of bytes available for non-root user.
+	Available uint64 `json:"available"`
+
 	// Number of reads completed
 	// This is the total number of reads completed successfully.
 	ReadsCompleted uint64 `json:"reads_completed"`
@@ -505,17 +514,8 @@ const (
 
 // Extra information about an event. Only one type will be set.
 type EventData struct {
-	// Information about a container creation event.
-	Created *CreatedEventData `json:"created,omitempty"`
-
 	// Information about an OOM kill event.
 	OomKill *OomKillEventData `json:"oom,omitempty"`
-}
-
-// Information related to a container creation event.
-type CreatedEventData struct {
-	// Spec of the container at creation.
-	Spec ContainerSpec `json:"spec"`
 }
 
 // Information related to an OOM kill instance

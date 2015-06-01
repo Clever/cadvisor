@@ -20,11 +20,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/Clever/cadvisor/storage"
+	"github.com/Clever/cadvisor/storage/bigquery"
+	"github.com/Clever/cadvisor/storage/influxdb"
+	"github.com/Clever/cadvisor/storage/memory"
+	"github.com/Clever/cadvisor/storage/redis"
 	"github.com/golang/glog"
-	"github.com/google/cadvisor/storage"
-	"github.com/google/cadvisor/storage/bigquery"
-	"github.com/google/cadvisor/storage/influxdb"
-	"github.com/google/cadvisor/storage/memory"
 )
 
 var argDbUsername = flag.String("storage_driver_user", "root", "database username")
@@ -71,6 +72,21 @@ func NewMemoryStorage(backendStorageName string) (*memory.InMemoryStorage, error
 			hostname,
 			*argDbTable,
 			*argDbName,
+		)
+	case "redis":
+		//machineName: We use os.Hostname as the machineName (A unique identifier to identify the host that runs the current cAdvisor)
+		//argDbName: the key for redis's data
+		//argDbHost: the redis's server host
+		var machineName string
+		machineName, err = os.Hostname()
+		if err != nil {
+			return nil, err
+		}
+		backendStorage, err = redis.New(
+			machineName,
+			*argDbName,
+			*argDbHost,
+			*argDbBufferDuration,
 		)
 	default:
 		err = fmt.Errorf("unknown backend storage driver: %v", *argDbDriver)

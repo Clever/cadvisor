@@ -19,21 +19,42 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"strconv"
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/google/cadvisor/container/docker"
-	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/manager"
+	"github.com/Clever/cadvisor/container/docker"
+	info "github.com/Clever/cadvisor/info/v1"
+	"github.com/Clever/cadvisor/manager"
 )
 
 const DockerPage = "/docker/"
+
+func toStatusKV(status manager.DockerStatus) ([]keyVal, []keyVal) {
+	ds := []keyVal{
+		{Key: "Driver", Value: status.Driver},
+	}
+	for k, v := range status.DriverStatus {
+		ds = append(ds, keyVal{Key: k, Value: v})
+	}
+	return []keyVal{
+		{Key: "Docker Version", Value: status.Version},
+		{Key: "Kernel Version", Value: status.KernelVersion},
+		{Key: "OS Version", Value: status.OS},
+		{Key: "Host Name", Value: status.Hostname},
+		{Key: "Docker Root Directory", Value: status.RootDir},
+		{Key: "Execution  Driver", Value: status.ExecDriver},
+		{Key: "Number of Images", Value: strconv.Itoa(status.NumImages)},
+		{Key: "Number of Containers", Value: strconv.Itoa(status.NumContainers)},
+	}, ds
+}
 
 func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) error {
 	start := time.Now()
 
 	// The container name is the path after the handler
 	containerName := u.Path[len(DockerPage):]
+	rootDir := getRootDir(u.Path)
 
 	var data *pageData
 	if containerName == "" {
@@ -53,6 +74,19 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) error
 			})
 		}
 
+		// Get Docker status
+		status, err := m.DockerInfo()
+		if err != nil {
+			return err
+		}
+
+		dockerStatus, driverStatus := toStatusKV(status)
+		// Get Docker Images
+		images, err := m.DockerImages()
+		if err != nil {
+			return err
+		}
+
 		dockerContainersText := "Docker Containers"
 		data = &pageData{
 			DisplayName: dockerContainersText,
@@ -61,7 +95,11 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) error
 					Text: dockerContainersText,
 					Link: DockerPage,
 				}},
-			Subcontainers: subcontainers,
+			Subcontainers:      subcontainers,
+			Root:               rootDir,
+			DockerStatus:       dockerStatus,
+			DockerDriverStatus: driverStatus,
+			DockerImages:       images,
 		}
 	} else {
 		// Get the container.
@@ -90,7 +128,6 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) error
 		if err != nil {
 			return err
 		}
-
 		data = &pageData{
 			DisplayName:        displayName,
 			ContainerName:      cont.Name,
@@ -103,6 +140,7 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) error
 			MemoryAvailable:    cont.Spec.HasMemory,
 			NetworkAvailable:   cont.Spec.HasNetwork,
 			FsAvailable:        cont.Spec.HasFilesystem,
+			Root:               rootDir,
 		}
 	}
 

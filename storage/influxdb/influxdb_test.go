@@ -23,9 +23,9 @@ import (
 	"testing"
 	"time"
 
-	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/storage"
-	"github.com/google/cadvisor/storage/test"
+	info "github.com/Clever/cadvisor/info/v1"
+	"github.com/Clever/cadvisor/storage"
+	"github.com/Clever/cadvisor/storage/test"
 	influxdb "github.com/influxdb/influxdb/client"
 )
 
@@ -51,7 +51,7 @@ func (self *influxDbTestStorageDriver) AddStats(ref info.ContainerReference, sta
 }
 
 func (self *influxDbTestStorageDriver) RecentStats(containerName string, numStats int) ([]*info.ContainerStats, error) {
-	return self.base.RecentStats(containerName, numStats)
+	return nil, nil
 }
 
 func (self *influxDbTestStorageDriver) Percentiles(containerName string, cpuUsagePercentiles []int, memUsagePercentiles []int) (*info.ContainerStatsPercentiles, error) {

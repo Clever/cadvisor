@@ -26,13 +26,13 @@ import (
 
 	dclient "github.com/fsouza/go-dockerclient"
 	"github.com/golang/glog"
-	"github.com/google/cadvisor/container/docker"
-	"github.com/google/cadvisor/fs"
-	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/utils"
-	"github.com/google/cadvisor/utils/sysfs"
-	"github.com/google/cadvisor/utils/sysinfo"
-	version "github.com/google/cadvisor/version"
+	"github.com/Clever/cadvisor/container/docker"
+	"github.com/Clever/cadvisor/fs"
+	info "github.com/Clever/cadvisor/info/v1"
+	"github.com/Clever/cadvisor/utils"
+	"github.com/Clever/cadvisor/utils/sysfs"
+	"github.com/Clever/cadvisor/utils/sysinfo"
+	version "github.com/Clever/cadvisor/version"
 )
 
 var cpuRegExp = regexp.MustCompile("processor\\t*: +([0-9]+)")
@@ -62,7 +62,12 @@ func getClockSpeed(procInfo []byte) (uint64, error) {
 	// Fall back to /proc/cpuinfo
 	matches := CpuClockSpeedMHz.FindSubmatch(procInfo)
 	if len(matches) != 2 {
-		return 0, fmt.Errorf("could not detect clock speed from output: %q", string(procInfo))
+		//Check if we are running on Power systems which have a different format
+		CpuClockSpeedMHz, _ = regexp.Compile("clock\\t*: +([0-9]+.[0-9]+)MHz")
+		matches = CpuClockSpeedMHz.FindSubmatch(procInfo)
+		if len(matches) != 2 {
+			return 0, fmt.Errorf("could not detect clock speed from output: %q", string(procInfo))
+		}
 	}
 	speed, err := strconv.ParseFloat(string(matches[1]), 64)
 	if err != nil {
@@ -187,7 +192,8 @@ func getTopology(sysFs sysfs.SysFs, cpuinfo string) ([]info.Node, int, error) {
 	for idx, node := range nodes {
 		caches, err := sysinfo.GetCacheInfo(sysFs, node.Cores[0].Threads[0])
 		if err != nil {
-			return nil, -1, fmt.Errorf("failed to get cache information for node %d: %v", node.Id, err)
+			glog.Errorf("failed to get cache information for node %d: %v", node.Id, err)
+			continue
 		}
 		numThreadsPerCore := len(node.Cores[0].Threads)
 		numThreadsPerNode := len(node.Cores) * numThreadsPerCore
