@@ -22,9 +22,9 @@ import (
 
 	auth "github.com/abbot/go-http-auth"
 	"github.com/golang/glog"
-	httpMux "github.com/google/cadvisor/http/mux"
-	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/manager"
+	httpMux "github.com/Clever/cadvisor/http/mux"
+	info "github.com/Clever/cadvisor/info/v1"
+	"github.com/Clever/cadvisor/manager"
 )
 
 var pageTemplate *template.Template
@@ -35,6 +35,11 @@ type link struct {
 
 	// Web address to link to.
 	Link string
+}
+
+type keyVal struct {
+	Key   string
+	Value string
 }
 
 type pageData struct {
@@ -51,6 +56,10 @@ type pageData struct {
 	MemoryAvailable    bool
 	NetworkAvailable   bool
 	FsAvailable        bool
+	Root               string
+	DockerStatus       []keyVal
+	DockerDriverStatus []keyVal
+	DockerImages       []manager.DockerImage
 }
 
 func init() {

@@ -22,3 +22,7 @@ Specify what InfluxDB instance to push data to:
  # Use secure connection with database. False by default
  -storage_driver_secure
 ```
+
+# Examples
+
+[Brian Christner](https://www.brianchristner.io) wrote a detailed post on [setting up Docker monitoring](https://www.brianchristner.io/how-to-setup-docker-monitoring) with cAdvisor and Influxdb.  A docker compose configuration for setting up cadvisor-influxdb-grafana can be found [here](https://github.com/dalekurt/docker-monitoring/blob/master/docker-compose.yml).

@@ -18,24 +18,31 @@ import (
 	"flag"
 	"fmt"
 	"math"
+	"os/exec"
+	"regexp"
 	"sort"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/Clever/cadvisor/collector"
+	"github.com/Clever/cadvisor/container"
+	info "github.com/Clever/cadvisor/info/v1"
+	"github.com/Clever/cadvisor/info/v2"
+	"github.com/Clever/cadvisor/storage/memory"
+	"github.com/Clever/cadvisor/summary"
+	"github.com/Clever/cadvisor/utils/cpuload"
 	"github.com/docker/docker/pkg/units"
 	"github.com/golang/glog"
-	"github.com/google/cadvisor/container"
-	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/info/v2"
-	"github.com/google/cadvisor/storage/memory"
-	"github.com/google/cadvisor/summary"
-	"github.com/google/cadvisor/utils/cpuload"
 )
 
 // Housekeeping interval.
 var HousekeepingInterval = flag.Duration("housekeeping_interval", 1*time.Second, "Interval between container housekeepings")
 var maxHousekeepingInterval = flag.Duration("max_housekeeping_interval", 60*time.Second, "Largest interval to allow between container housekeepings")
 var allowDynamicHousekeeping = flag.Bool("allow_dynamic_housekeeping", true, "Whether to allow the housekeeping interval to be dynamic")
+
+var cgroupPathRegExp = regexp.MustCompile(".*:devices:(.*?),.*")
 
 // Decay value used for load average smoothing. Interval length of 10 seconds is used.
 var loadDecay = math.Exp(float64(-1 * (*HousekeepingInterval).Seconds() / 10))
@@ -63,6 +70,9 @@ type containerData struct {
 
 	// Tells the container to stop.
 	stop chan bool
+
+	// Runs custom metric collectors.
+	collectorManager collector.CollectorManager
 }
 
 func (c *containerData) Start() error {
@@ -109,7 +119,103 @@ func (c *containerData) DerivedStats() (v2.DerivedStats, error) {
 	return c.summaryReader.DerivedStats()
 }
 
-func newContainerData(containerName string, memoryStorage *memory.InMemoryStorage, handler container.ContainerHandler, loadReader cpuload.CpuLoadReader, logUsage bool) (*containerData, error) {
+func (c *containerData) getCgroupPath(cgroups string) (string, error) {
+	if cgroups == "-" {
+		return "/", nil
+	}
+	matches := cgroupPathRegExp.FindSubmatch([]byte(cgroups))
+	if len(matches) != 2 {
+		glog.V(3).Infof("failed to get devices cgroup path from %q", cgroups)
+		// return root in case of failures - devices hierarchy might not be enabled.
+		return "/", nil
+	}
+	return string(matches[1]), nil
+}
+
+func (c *containerData) GetProcessList() ([]v2.ProcessInfo, error) {
+	// report all processes for root.
+	isRoot := c.info.Name == "/"
+	pidMap := map[int]bool{}
+	if !isRoot {
+		pids, err := c.handler.ListProcesses(container.ListSelf)
+		if err != nil {
+			return nil, err
+		}
+		for _, pid := range pids {
+			pidMap[pid] = true
+		}
+	}
+	// TODO(rjnagal): Take format as an option?
+	format := "user,pid,ppid,stime,pcpu,pmem,rss,vsz,stat,time,comm,cgroup"
+	args := []string{"-e", "-o", format}
+	expectedFields := 12
+	out, err := exec.Command("ps", args...).Output()
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute ps command: %v", err)
+	}
+	processes := []v2.ProcessInfo{}
+	lines := strings.Split(string(out), "\n")
+	for _, line := range lines[1:] {
+		if len(line) == 0 {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) < expectedFields {
+			return nil, fmt.Errorf("expected at least %d fields, found %d: output: %q", expectedFields, len(fields), line)
+		}
+		pid, err := strconv.Atoi(fields[1])
+		if err != nil {
+			return nil, fmt.Errorf("invalid pid %q: %v", fields[1], err)
+		}
+		ppid, err := strconv.Atoi(fields[2])
+		if err != nil {
+			return nil, fmt.Errorf("invalid ppid %q: %v", fields[2], err)
+		}
+		percentCpu, err := strconv.ParseFloat(fields[4], 32)
+		if err != nil {
+			return nil, fmt.Errorf("invalid cpu percent %q: %v", fields[4], err)
+		}
+		percentMem, err := strconv.ParseFloat(fields[5], 32)
+		if err != nil {
+			return nil, fmt.Errorf("invalid memory percent %q: %v", fields[5], err)
+		}
+		rss, err := strconv.ParseUint(fields[6], 0, 64)
+		if err != nil {
+			return nil, fmt.Errorf("invalid rss %q: %v", fields[6], err)
+		}
+		vs, err := strconv.ParseUint(fields[7], 0, 64)
+		if err != nil {
+			return nil, fmt.Errorf("invalid virtual size %q: %v", fields[7], err)
+		}
+		var cgroupPath string
+		if isRoot {
+			cgroupPath, err = c.getCgroupPath(fields[11])
+			if err != nil {
+				return nil, fmt.Errorf("could not parse cgroup path from %q: %v", fields[10], err)
+			}
+		}
+
+		if isRoot || pidMap[pid] == true {
+			processes = append(processes, v2.ProcessInfo{
+				User:          fields[0],
+				Pid:           pid,
+				Ppid:          ppid,
+				StartTime:     fields[3],
+				PercentCpu:    float32(percentCpu),
+				PercentMemory: float32(percentMem),
+				RSS:           rss,
+				VirtualSize:   vs,
+				Status:        fields[8],
+				RunningTime:   fields[9],
+				Cmd:           fields[10],
+				CgroupPath:    cgroupPath,
+			})
+		}
+	}
+	return processes, nil
+}
+
+func newContainerData(containerName string, memoryStorage *memory.InMemoryStorage, handler container.ContainerHandler, loadReader cpuload.CpuLoadReader, logUsage bool, collectorManager collector.CollectorManager) (*containerData, error) {
 	if memoryStorage == nil {
 		return nil, fmt.Errorf("nil memory storage")
 	}
@@ -129,6 +235,7 @@ func newContainerData(containerName string, memoryStorage *memory.InMemoryStorag
 		logUsage:             logUsage,
 		loadAvg:              -1.0, // negative value indicates uninitialized.
 		stop:                 make(chan bool, 1),
+		collectorManager:     collectorManager,
 	}
 	cont.info.ContainerReference = ref
 
@@ -172,6 +279,7 @@ func (self *containerData) nextHousekeeping(lastHousekeeping time.Time) time.Tim
 	return lastHousekeeping.Add(self.housekeepingInterval)
 }
 
+// TODO(vmarmol): Implement stats collecting as a custom collector.
 func (c *containerData) housekeeping() {
 	// Long housekeeping is either 100ms or half of the housekeeping interval.
 	longHousekeeping := 100 * time.Millisecond
@@ -226,12 +334,25 @@ func (c *containerData) housekeeping() {
 			}
 		}
 
-		// Schedule the next housekeeping. Sleep until that time.
-		nextHousekeeping := c.nextHousekeeping(lastHousekeeping)
-		if time.Now().Before(nextHousekeeping) {
-			time.Sleep(nextHousekeeping.Sub(time.Now()))
+		// TODO(vmarmol): Export metrics.
+		// Run custom collectors.
+		nextCollectionTime, _, err := c.collectorManager.Collect()
+		if err != nil && c.allowErrorLogging() {
+			glog.Warningf("[%s] Collection failed: %v", c.info.Name, err)
 		}
-		lastHousekeeping = nextHousekeeping
+
+		// Next housekeeping is the first of the stats or the custom collector's housekeeping.
+		nextHousekeeping := c.nextHousekeeping(lastHousekeeping)
+		next := nextHousekeeping
+		if !nextCollectionTime.IsZero() && nextCollectionTime.Before(nextHousekeeping) {
+			next = nextCollectionTime
+		}
+
+		// Schedule the next housekeeping. Sleep until that time.
+		if time.Now().Before(next) {
+			time.Sleep(next.Sub(time.Now()))
+		}
+		lastHousekeeping = next
 	}
 }
 
@@ -302,7 +423,7 @@ func (c *containerData) updateStats() error {
 		err := c.summaryReader.AddSample(*stats)
 		if err != nil {
 			// Ignore summary errors for now.
-			glog.V(2).Infof("failed to add summary stats for %q: %v", c.info.Name, err)
+			glog.V(2).Infof("Failed to add summary stats for %q: %v", c.info.Name, err)
 		}
 	}
 	ref, err := c.handler.ContainerReference()

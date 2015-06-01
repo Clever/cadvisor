@@ -19,7 +19,7 @@ import (
 	"os"
 
 	"github.com/golang/glog"
-	info "github.com/google/cadvisor/info/v1"
+	info "github.com/Clever/cadvisor/info/v1"
 )
 
 type NetlinkReader struct {

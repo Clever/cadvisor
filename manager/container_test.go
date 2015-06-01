@@ -22,10 +22,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/cadvisor/container"
-	info "github.com/google/cadvisor/info/v1"
-	itest "github.com/google/cadvisor/info/v1/test"
-	"github.com/google/cadvisor/storage/memory"
+	"github.com/Clever/cadvisor/collector"
+	"github.com/Clever/cadvisor/container"
+	info "github.com/Clever/cadvisor/info/v1"
+	itest "github.com/Clever/cadvisor/info/v1/test"
+	"github.com/Clever/cadvisor/storage/memory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -40,7 +41,7 @@ func setupContainerData(t *testing.T, spec info.ContainerSpec) (*containerData, 
 		nil,
 	)
 	memoryStorage := memory.New(60, nil)
-	ret, err := newContainerData(containerName, memoryStorage, mockHandler, nil, false)
+	ret, err := newContainerData(containerName, memoryStorage, mockHandler, nil, false, &collector.FakeCollectorManager{})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -22,15 +22,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Clever/cadvisor/container"
+	containerLibcontainer "github.com/Clever/cadvisor/container/libcontainer"
+	"github.com/Clever/cadvisor/fs"
+	info "github.com/Clever/cadvisor/info/v1"
+	"github.com/Clever/cadvisor/utils"
 	"github.com/docker/libcontainer/cgroups"
 	cgroup_fs "github.com/docker/libcontainer/cgroups/fs"
 	libcontainerConfigs "github.com/docker/libcontainer/configs"
 	"github.com/fsouza/go-dockerclient"
-	"github.com/google/cadvisor/container"
-	containerLibcontainer "github.com/google/cadvisor/container/libcontainer"
-	"github.com/google/cadvisor/fs"
-	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/utils"
 )
 
 // Path to aufs dir where all the files exist.
@@ -68,6 +68,10 @@ type dockerContainerHandler struct {
 
 	// Time at which this container was created.
 	creationTime time.Time
+
+	// Metadata labels associated with the container.
+	labels      map[string]string
+	marathonApp string
 }
 
 func newDockerContainerHandler(
@@ -115,15 +119,20 @@ func newDockerContainerHandler(
 	// Add the name and bare ID as aliases of the container.
 	handler.aliases = append(handler.aliases, strings.TrimPrefix(ctnr.Name, "/"))
 	handler.aliases = append(handler.aliases, id)
+	handler.labels = ctnr.Config.Labels
+	handler.aliases = append(handler.aliases, ctnr.Config.Hostname)
+
+	handler.marathonApp = getMarathonAppName(ctnr)
 
 	return handler, nil
 }
 
 func (self *dockerContainerHandler) ContainerReference() (info.ContainerReference, error) {
 	return info.ContainerReference{
-		Name:      self.name,
-		Aliases:   self.aliases,
-		Namespace: DockerNamespace,
+		Name:        self.name,
+		Aliases:     self.aliases,
+		Namespace:   DockerNamespace,
+		MarathonApp: self.marathonApp,
 	}, nil
 }
 
@@ -184,6 +193,7 @@ func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	if self.usesAufsDriver {
 		spec.HasFilesystem = true
 	}
+	spec.Labels = self.labels
 
 	return spec, err
 }
@@ -291,14 +301,19 @@ func (self *dockerContainerHandler) ListContainers(listType container.ListType) 
 
 	ret := make([]info.ContainerReference, 0, len(containers)+1)
 	for _, c := range containers {
+		ctnr, err := self.client.InspectContainer(c.ID)
+		if err != nil {
+			continue
+		}
 		if !strings.HasPrefix(c.Status, "Up ") {
 			continue
 		}
 
 		ref := info.ContainerReference{
-			Name:      FullContainerName(c.ID),
-			Aliases:   append(c.Names, c.ID),
-			Namespace: DockerNamespace,
+			Name:        FullContainerName(c.ID),
+			Aliases:     append(c.Names, c.ID),
+			Namespace:   DockerNamespace,
+			MarathonApp: getMarathonAppName(ctnr),
 		}
 		ret = append(ret, ref)
 	}
@@ -320,8 +335,7 @@ func (self *dockerContainerHandler) ListThreads(listType container.ListType) ([]
 }
 
 func (self *dockerContainerHandler) ListProcesses(listType container.ListType) ([]int, error) {
-	// TODO(vmarmol): Implement.
-	return nil, nil
+	return containerLibcontainer.GetProcesses(self.cgroupManager)
 }
 
 func (self *dockerContainerHandler) WatchSubcontainers(events chan container.SubcontainerEvent) error {
@@ -335,4 +349,49 @@ func (self *dockerContainerHandler) StopWatchingSubcontainers() error {
 
 func (self *dockerContainerHandler) Exists() bool {
 	return containerLibcontainer.Exists(*dockerRootDir, *dockerRunDir, self.id)
+}
+
+func DockerInfo() (map[string]string, error) {
+	client, err := docker.NewClient(*ArgDockerEndpoint)
+	if err != nil {
+		return nil, fmt.Errorf("unable to communicate with docker daemon: %v", err)
+	}
+	info, err := client.Info()
+	if err != nil {
+		return nil, err
+	}
+	return info.Map(), nil
+}
+
+func DockerImages() ([]docker.APIImages, error) {
+	client, err := docker.NewClient(*ArgDockerEndpoint)
+	if err != nil {
+		return nil, fmt.Errorf("unable to communicate with docker daemon: %v", err)
+	}
+	images, err := client.ListImages(docker.ListImagesOptions{All: false})
+	if err != nil {
+		return nil, err
+	}
+	return images, nil
+}
+
+func getMarathonAppName(ctnr *docker.Container) string {
+	envs := ctnr.Config.Env
+	for _, env := range envs {
+		parts := strings.SplitN(env, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		if parts[0] == "MARATHON_APP_ID" {
+			return sanitizeMarathonAppID(parts[1])
+		}
+	}
+	return ""
+}
+
+func sanitizeMarathonAppID(appID string) string {
+	if strings.HasPrefix(appID, "/") {
+		appID = appID[1:]
+	}
+	return strings.Replace(appID, "/", "-", -1)
 }

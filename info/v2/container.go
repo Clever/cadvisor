@@ -19,7 +19,7 @@ import (
 
 	// TODO(rjnagal): Remove dependency after moving all stats structs from v1.
 	// using v1 now for easy conversion.
-	"github.com/google/cadvisor/info/v1"
+	"github.com/Clever/cadvisor/info/v1"
 )
 
 const (
@@ -64,11 +64,19 @@ type ContainerSpec struct {
 	// An example of a namespace is "docker" for Docker containers.
 	Namespace string `json:"namespace,omitempty"`
 
+	// Metadata labels associated with this container.
+	Labels map[string]string `json:"labels,omitempty"`
+
 	HasCpu bool    `json:"has_cpu"`
 	Cpu    CpuSpec `json:"cpu,omitempty"`
 
 	HasMemory bool       `json:"has_memory"`
 	Memory    MemorySpec `json:"memory,omitempty"`
+
+	// Following resources have no associated spec, but are being isolated.
+	HasNetwork    bool `json:"has_network"`
+	HasFilesystem bool `json:"has_filesystem"`
+	HasDiskIo     bool `json:"has_diskio"`
 }
 
 type ContainerStats struct {
@@ -148,6 +156,9 @@ type FsInfo struct {
 	// Filesystem usage in bytes.
 	Capacity uint64 `json:"capacity"`
 
+	// Bytes available for non-root use.
+	Available uint64 `json:"available"`
+
 	// Number of bytes used on this filesystem.
 	Usage uint64 `json:"usage"`
 
@@ -162,4 +173,19 @@ type RequestOptions struct {
 	Count int `json:"count"`
 	// Whether to include stats for child subcontainers.
 	Recursive bool `json:"recursive"`
+}
+
+type ProcessInfo struct {
+	User          string  `json:"user"`
+	Pid           int     `json:"pid"`
+	Ppid          int     `json:"parent_pid"`
+	StartTime     string  `json:"start_time"`
+	PercentCpu    float32 `json:"percent_cpu"`
+	PercentMemory float32 `json:"percent_mem"`
+	RSS           uint64  `json:"rss"`
+	VirtualSize   uint64  `json:"virtual_size"`
+	Status        string  `json:"status"`
+	RunningTime   string  `json:"running_time"`
+	CgroupPath    string  `json:"cgroup_path"`
+	Cmd           string  `json:"cmd"`
 }

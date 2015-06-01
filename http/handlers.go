@@ -20,14 +20,14 @@ import (
 
 	auth "github.com/abbot/go-http-auth"
 	"github.com/golang/glog"
-	"github.com/google/cadvisor/api"
-	"github.com/google/cadvisor/healthz"
-	httpMux "github.com/google/cadvisor/http/mux"
-	"github.com/google/cadvisor/manager"
-	"github.com/google/cadvisor/metrics"
-	"github.com/google/cadvisor/pages"
-	"github.com/google/cadvisor/pages/static"
-	"github.com/google/cadvisor/validate"
+	"github.com/Clever/cadvisor/api"
+	"github.com/Clever/cadvisor/healthz"
+	httpMux "github.com/Clever/cadvisor/http/mux"
+	"github.com/Clever/cadvisor/manager"
+	"github.com/Clever/cadvisor/metrics"
+	"github.com/Clever/cadvisor/pages"
+	"github.com/Clever/cadvisor/pages/static"
+	"github.com/Clever/cadvisor/validate"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
