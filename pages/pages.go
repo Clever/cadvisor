@@ -22,9 +22,9 @@ import (
 
 	auth "github.com/abbot/go-http-auth"
 	"github.com/golang/glog"
-	httpMux "github.com/google/cadvisor/http/mux"
-	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/manager"
+	httpMux "github.com/Clever/cadvisor/http/mux"
+	info "github.com/Clever/cadvisor/info/v1"
+	"github.com/Clever/cadvisor/manager"
 )
 
 var pageTemplate *template.Template

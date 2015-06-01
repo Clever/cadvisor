@@ -16,9 +16,9 @@ package bigquery
 
 import (
 	bigquery "code.google.com/p/google-api-go-client/bigquery/v2"
-	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/storage"
-	"github.com/google/cadvisor/storage/bigquery/client"
+	info "github.com/Clever/cadvisor/info/v1"
+	"github.com/Clever/cadvisor/storage"
+	"github.com/Clever/cadvisor/storage/bigquery/client"
 )
 
 type bigqueryStorage struct {

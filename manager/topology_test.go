@@ -19,9 +19,9 @@ import (
 	"reflect"
 	"testing"
 
-	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/utils/sysfs"
-	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
+	info "github.com/Clever/cadvisor/info/v1"
+	"github.com/Clever/cadvisor/utils/sysfs"
+	"github.com/Clever/cadvisor/utils/sysfs/fakesysfs"
 )
 
 func TestTopology(t *testing.T) {

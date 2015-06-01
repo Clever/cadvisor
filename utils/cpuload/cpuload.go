@@ -18,8 +18,8 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
-	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/utils/cpuload/netlink"
+	info "github.com/Clever/cadvisor/info/v1"
+	"github.com/Clever/cadvisor/utils/cpuload/netlink"
 )
 
 type CpuLoadReader interface {

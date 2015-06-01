@@ -22,11 +22,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/cadvisor/collector"
-	"github.com/google/cadvisor/container"
-	info "github.com/google/cadvisor/info/v1"
-	itest "github.com/google/cadvisor/info/v1/test"
-	"github.com/google/cadvisor/storage/memory"
+	"github.com/Clever/cadvisor/collector"
+	"github.com/Clever/cadvisor/container"
+	info "github.com/Clever/cadvisor/info/v1"
+	itest "github.com/Clever/cadvisor/info/v1/test"
+	"github.com/Clever/cadvisor/storage/memory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

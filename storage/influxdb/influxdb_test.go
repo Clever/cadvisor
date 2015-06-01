@@ -23,9 +23,9 @@ import (
 	"testing"
 	"time"
 
-	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/storage"
-	"github.com/google/cadvisor/storage/test"
+	info "github.com/Clever/cadvisor/info/v1"
+	"github.com/Clever/cadvisor/storage"
+	"github.com/Clever/cadvisor/storage/test"
 	influxdb "github.com/influxdb/influxdb/client"
 )
 

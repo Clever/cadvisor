@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"syscall"
 
-	info "github.com/google/cadvisor/info/v1"
+	info "github.com/Clever/cadvisor/info/v1"
 )
 
 const (

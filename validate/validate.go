@@ -19,7 +19,7 @@ package validate
 
 import (
 	"fmt"
-	"github.com/google/cadvisor/manager"
+	"github.com/Clever/cadvisor/manager"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -28,8 +28,8 @@ import (
 
 	"github.com/docker/libcontainer/cgroups"
 	dclient "github.com/fsouza/go-dockerclient"
-	"github.com/google/cadvisor/container/docker"
-	"github.com/google/cadvisor/utils"
+	"github.com/Clever/cadvisor/container/docker"
+	"github.com/Clever/cadvisor/utils"
 )
 
 const (

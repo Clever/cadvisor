@@ -29,7 +29,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/google/cadvisor/integration/common"
+	"github.com/Clever/cadvisor/integration/common"
 )
 
 const cadvisorBinary = "cadvisor"
@@ -110,7 +110,7 @@ func PushAndRunTests(host, testDir string) error {
 
 	// Run the tests.
 	glog.Infof("Running integration tests targeting %q...", host)
-	err = RunCommand("godep", "go", "test", "github.com/google/cadvisor/integration/tests/...", "--host", host, "--port", portStr)
+	err = RunCommand("godep", "go", "test", "github.com/Clever/cadvisor/integration/tests/...", "--host", host, "--port", portStr)
 	if err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func Run() error {
 
 	// Build cAdvisor.
 	glog.Infof("Building cAdvisor...")
-	err := RunCommand("godep", "go", "build", "github.com/google/cadvisor")
+	err := RunCommand("godep", "go", "build", "github.com/Clever/cadvisor")
 	if err != nil {
 		return err
 	}

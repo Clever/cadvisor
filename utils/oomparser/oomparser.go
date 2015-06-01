@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/google/cadvisor/utils"
+	"github.com/Clever/cadvisor/utils"
 )
 
 var containerRegexp *regexp.Regexp = regexp.MustCompile(
